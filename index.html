@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Glitch Runner: Quantum Deception • CrazyGames</title>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="stylesheet" href="./src/style.css">
+  <!-- CrazyGames SDK v3 Oficial com carregamento assíncrono -->
+  <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js" async></script>
+</head>
+<body>
+  <div id="game-container">
+    <!-- Canvas Edge-to-Edge Fullscreen Responsivo -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Overlay da Introdução FluidCleb Interactive (0.0s a 2.8s) -->
+    <canvas id="intro-canvas"></canvas>
+
+    <!-- Modal de Lore Interativa (Land in Gameplay em 1 clique) -->
+    <div id="modal-lore" class="game-modal hidden">
+      <div class="modal-content lore-content">
+        <div style="font-size: 11px; font-weight: 800; color: #38bdf8; letter-spacing: 2px; margin-bottom: 6px;">MAINFRAME ERROR #404</div>
+        <h2 id="lore-title" class="glow-title">GLITCH RUNNER: QUANTUM DECEPTION</h2>
+        <div id="lore-desc" style="margin: 16px 0; font-size: 13px; line-height: 1.6; color: #94a3b8; text-align: left;">
+          You are a digital operator trapped inside a corrupted quantum mainframe where laws of physics mutate with every leap and safe paths vanish unexpectedly. Memorize invisible traps, collect physical quantum stars, outsmart deceptive portals, and break through the singularity!
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 18px;">
+          <button id="btn-lore-skip" class="btn-secondary">SKIP INTRO ➔</button>
+          <button id="btn-lore-start" class="btn-primary">START RUN (PLAY)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD Flutuante Sobreposto (#in-game-hud com pointer-events: none) -->
+    <div id="in-game-hud">
+      <!-- Top Header: Informações de Fase, Barra de 3 Estrelas e Ações -->
+      <div class="hud-header-wrapper">
+        <div class="hud-top">
+          <div class="hud-group-left">
+            <div id="hud-level-title" class="hud-badge cyan">LVL 1</div>
+            <div id="hud-death-val" class="hud-badge red">💀 0</div>
+            <div id="hud-bits-val" class="hud-badge gold">💎 100</div>
+          </div>
+
+          <!-- Barra Visual de Progresso de 3 Estrelas com Marcos em Tempo Real -->
+          <div class="hud-star-meter-wrapper">
+            <div class="star-progress-bar">
+              <div id="hud-star-fill" class="star-fill" style="width: 0%;"></div>
+              <div id="star-marker-1" class="star-marker star-1">★</div>
+              <div id="star-marker-2" class="star-marker star-2">★</div>
+              <div id="star-marker-3" class="star-marker star-3">★</div>
+            </div>
+            <button id="btn-early-finish" class="btn-early-finish hidden">✅ EXIT (★) ➔</button>
+          </div>
+
+          <!-- Grupo Direito de Ações -->
+          <div class="hud-group-right">
+            <button id="btn-open-login" class="hud-btn secondary-action" title="Daily Login">🎁</button>
+            <button id="btn-open-quests" class="hud-btn secondary-action" title="Quests">📜</button>
+            <button id="btn-open-vault" class="hud-btn secondary-action" title="Achievements">💎</button>
+            <button id="btn-open-leaderboard" class="hud-btn secondary-action" title="Leaderboard">👑</button>
+            <button id="btn-open-shop" class="hud-btn secondary-action" title="Skins Shop">👕</button>
+            <button id="btn-open-wheel" class="hud-btn secondary-action" title="Lucky Wheel">🎡</button>
+            <button id="btn-sound-toggle" class="hud-btn" title="Sound Effects">🔊</button>
+            <button id="btn-lang-toggle" class="hud-btn secondary-action" title="Language">🌐 EN</button>
+            <button id="btn-quick-retry" class="hud-btn retry-icon-btn" title="Quick Retry">↻</button>
+            <button id="btn-open-menu" class="hud-btn primary">☰ LEVELS</button>
+          </div>
+        </div>
+
+        <!-- Dica Discreta da Fase (Logo abaixo da barra superior) -->
+        <div class="hud-hint-container">
+          <div id="hud-level-hint" class="hud-hint-badge">Hint: The exit seems nervous when you get close...</div>
+        </div>
+      </div>
+
+      <!-- Controles Mobile Touch (Left / Right / Jump) — Isolados no Dock Inferior -->
+      <div id="mobile-touch-controls" class="mobile-controls">
+        <div class="touch-dpad">
+          <button id="touch-left" class="touch-btn" aria-label="Move Left">◀</button>
+          <button id="touch-right" class="touch-btn" aria-label="Move Right">▶</button>
+        </div>
+        <div class="touch-center-hint">
+          <a href="https://kinomuse.com.br" target="_blank" rel="noopener noreferrer" class="hud-official-link">kinomuse.com.br</a>
+        </div>
+        <div class="touch-actions">
+          <button id="touch-jump" class="touch-btn jump-btn" aria-label="Jump">▲ JUMP</button>
+        </div>
+      </div>
+
+      <!-- Barra Inferior do HUD (Exibida em Desktop) -->
+      <div class="hud-bottom desktop-only">
+        <span class="hud-controls-info">⚡ [A/D] MOVE • [W/SPACE] JUMP • [R] RETRY • [COLLECT 1★ TO UNLOCK NEXT LEVEL]</span>
+        <a href="https://kinomuse.com.br" target="_blank" rel="noopener noreferrer" class="hud-official-link">kinomuse.com.br</a>
+      </div>
+    </div>
+
+    <!-- Modal de Seleção de Níveis (1 a 18) -->
+    <div id="modal-level-select" class="game-modal hidden">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h2 id="levels-modal-title" class="glow-title">QUANTUM MAINFRAME SECTORS</h2>
+          <button id="btn-close-menu" class="btn-close">✕</button>
+        </div>
+        <!-- Barra de Acesso Rápido a Recursos no Modal (Acessível em Telas Menores) -->
+        <div class="modal-hub-quick-bar">
+          <button id="hub-btn-login" class="hub-pill">🎁 Daily (7d)</button>
+          <button id="hub-btn-quests" class="hub-pill">📜 Quests</button>
+          <button id="hub-btn-vault" class="hub-pill">💎 Vault</button>
+          <button id="hub-btn-leaderboard" class="hub-pill">👑 Ranks</button>
+          <button id="hub-btn-shop" class="hub-pill">👕 Skins</button>
+          <button id="hub-btn-wheel" class="hub-pill">🎡 Wheel</button>
+          <button id="hub-btn-lang" class="hub-pill">🌐 EN/PT</button>
+        </div>
+        <div id="levels-grid" class="levels-grid"></div>
+      </div>
+    </div>
+
+    <!-- Modal de Vitória (com 3 Estrelas e Opção de Dobrar Recompensa com Rewarded Ad) -->
+    <div id="modal-victory" class="game-modal hidden">
+      <div class="modal-content">
+        <div style="font-size: 36px; margin-bottom: 6px;">🏆</div>
+        <h2 id="vic-title" class="glow-title green">SECTOR BREACHED!</h2>
+        <div id="vic-stars" class="victory-stars">★★★</div>
+        <p id="vic-stats" style="margin: 8px 0; color: #94a3b8; font-size: 13px;"></p>
+        <div class="victory-reward-badge">
+          <span id="vic-reward-label">Reward Earned:</span>
+          <span id="vic-reward-amount" style="font-weight: 900; color: #fbbf24;">+85 QUANTUM BITS</span>
+        </div>
+        <div class="victory-buttons">
+          <button id="btn-vic-double" class="btn-rewarded">🎬 DOUBLE REWARD (2x)</button>
+          <button id="btn-vic-next" class="btn-primary">NEXT LEVEL ➔</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Daily Login (7 Dias) -->
+    <div id="modal-daily-login" class="game-modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="daily-modal-title" class="glow-title gold">DAILY LOGIN REWARDS (7 DAYS)</h2>
+          <button id="btn-close-login" class="btn-close">✕</button>
+        </div>
+        <p id="daily-modal-subtitle" style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Log in daily to claim increasing Quantum Bits!</p>
+        <div id="daily-login-grid" class="login-grid"></div>
+        <button id="btn-claim-daily" class="btn-primary" style="margin-top: 14px; width: 100%;">CLAIM TODAY'S REWARD</button>
+      </div>
+    </div>
+
+    <!-- Modal de Missões & Quests -->
+    <div id="modal-quests" class="game-modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="quests-modal-title" class="glow-title">📜 QUANTUM MISSIONS</h2>
+          <button id="btn-close-quests" class="btn-close">✕</button>
+        </div>
+        <div id="quests-list" class="quests-list"></div>
+      </div>
+    </div>
+
+    <!-- Modal de Cofre de Conquistas -->
+    <div id="modal-achievements" class="game-modal hidden">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h2 id="vault-modal-title" class="glow-title">💎 SYSTEM ACHIEVEMENTS</h2>
+          <button id="btn-close-vault" class="btn-close">✕</button>
+        </div>
+        <div id="achievements-grid" class="achievements-grid"></div>
+      </div>
+    </div>
+
+    <!-- Modal de Leaderboard -->
+    <div id="modal-leaderboard" class="game-modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="leaderboard-modal-title" class="glow-title gold">👑 GLITCH RUNNERS RANK</h2>
+          <button id="btn-close-leaderboard" class="btn-close">✕</button>
+        </div>
+        <div id="leaderboard-subtitle" style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Top Quantum Operators escaping the Mainframe:</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; text-align: left; font-size: 13px;">
+          <div style="display: flex; justify-content: space-between; padding: 7px 12px; background: #1e293b; border-radius: 8px;"><span>#1 ZeroDayHacker</span><span style="color: #fbbf24;">18/18 ★ • 0 deaths</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 7px 12px; background: #1e293b; border-radius: 8px;"><span>#2 CyberPhantom99</span><span style="color: #38bdf8;">18/18 ★ • 3 deaths</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 7px 12px; background: #1e293b; border-radius: 8px;"><span>#3 QuantumGlitch</span><span style="color: #38bdf8;">16/18 ★ • 7 deaths</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 7px 12px; background: #1e293b; border-radius: 8px;"><span>#4 BinaryNomad</span><span style="color: #94a3b8;">14/18 ★ • 12 deaths</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 7px 12px; background: #0284c7; border-radius: 8px; font-weight: 800;"><span>#5 You (Operator)</span><span style="color: #fff;">Active Run</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Loja de Skins -->
+    <div id="modal-skins" class="game-modal hidden">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h2 id="shop-modal-title" class="glow-title">OPERATOR SKINS & TRAILS</h2>
+          <button id="btn-close-skins" class="btn-close">✕</button>
+        </div>
+        <div id="skins-grid" class="skins-grid"></div>
+      </div>
+    </div>
+
+    <!-- Modal da Roleta da Sorte -->
+    <div id="modal-wheel" class="game-modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="wheel-modal-title" class="glow-title gold">QUANTUM LUCKY WHEEL</h2>
+          <button id="btn-close-wheel" class="btn-close">✕</button>
+        </div>
+        <div class="wheel-container">
+          <div class="wheel-pointer">▼</div>
+          <canvas id="wheel-canvas" width="280" height="280"></canvas>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+          <button id="btn-spin-wheel" class="btn-primary" style="width: 100%;">SPIN WHEEL!</button>
+          <button id="btn-wheel-rewarded" class="btn-rewarded hidden" style="width: 100%;">🎬 EXTRA SPIN (REWARDED AD)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
